@@ -25,13 +25,21 @@ struct node {
 };
 
 template <class T>
+class list_const_iterator;
+
+template <class T>
 class list_iterator {
   friend class list<T>;
 
  public:
-  using node_type = node<T>;
+  using difference_type = std::ptrdiff_t;
+  using iterator_category = std::bidirectional_iterator_tag;
+  using value_type = T;
+  using reference = value_type&;
+  using pointer = value_type*;
+  using node_type = node<value_type>;
 
-  list_iterator(node_type* ptr = nullptr) : ptr_(ptr) {}
+  explicit list_iterator(node_type* ptr = nullptr) : ptr_(ptr) {}
 
   list_iterator& operator++() {
     ptr_ = ptr_->next;
@@ -55,13 +63,38 @@ class list_iterator {
     return tmp;
   }
 
-  T& operator*() const { return ptr_->data; }
-  T* operator->() const { return &ptr_->data; }
+  bool operator==(const list_iterator& other) const noexcept {
+    return ptr_ == other.ptr_;
+  }
 
-  operator list_iterator<const T>() { return list_iterator<const T>(ptr_); }
+  bool operator!=(const list_iterator& other) const noexcept {
+    return !(*this == other);
+  }
 
- private:
+  reference operator*() const noexcept { return *ptr_->data; }
+  pointer operator->() const noexcept { return ptr_->data; }
+
+  operator list_const_iterator<value_type>() {
+    return list_const_iterator<value_type>(ptr_);
+  }
+
+ protected:
   node_type* ptr_;
+};
+
+template <class T>
+class list_const_iterator : public list_iterator<T> {
+ public:
+  using base = list_iterator<T>;
+  using value_type = typename base::value_type;
+  using node_type = typename base::node_type;
+  using reference = const value_type&;
+  using pointer = const value_type*;
+
+  explicit list_const_iterator(node_type* ptr = nullptr) : base(ptr) {}
+
+  reference operator*() const noexcept { return *this->ptr_->data; }
+  pointer operator->() const noexcept { return this->ptr_->data; }
 };
 
 template <class T>
@@ -76,11 +109,13 @@ class list {
   using difference_type = std::ptrdiff_t;
   using node_type = node<value_type>;
   using iterator = list_iterator<value_type>;
-  using const_iterator = list_iterator<const value_type>;
+  using const_iterator = list_const_iterator<value_type>;
   using reverse_iterator = std::reverse_iterator<iterator>;
   using const_reverse_iterator = std::reverse_iterator<const_iterator>;
 
-  list() : size_(), front_(new node_type()), back_(front_) {}
+  list() : size_(), front_(new node_type()), back_(front_) {
+    front_->next = front_->prev = front_;
+  }
 
   list(const list& other) : list() { *this = other; }
   list(list&& other) : list() { *this = std::move(other); }
@@ -161,7 +196,7 @@ class list {
 
   void clear() {
     while (front_ != back_) {
-      node_type* save = front_->next;
+      node_type* save = front_;
       front_ = front_->next;
       delete save;
     }
@@ -169,13 +204,13 @@ class list {
   }
 
   iterator insert(const_iterator pos, const_reference value) {
-    node_type* node = new node_type(value);
+    node_type* node = new node_type(new value_type(value));
     insert_node(pos.ptr_, node);
     return iterator(node);
   }
 
   iterator insert(const_iterator pos, value_type&& value) {
-    node_type* node = new node_type(std::move(value));
+    node_type* node = new node_type(std::move(new value_type(value)));
     insert_node(pos.ptr_, node);
     return iterator(node);
   }
@@ -184,7 +219,7 @@ class list {
   iterator insert(const_iterator pos, InputIt first, InputIt last) {
     if (first == last) return pos;
 
-    iterator result = insert(*first);
+    iterator result = insert(pos, *first);
     ++first;
 
     while (first != last) {
@@ -309,8 +344,10 @@ class list {
     std::swap(front_, back_->prev);
   }
 
+  void unique() { unique(std::equal_to<value_type>()); }
+
   template <class BinaryPredicate>
-  void unique(BinaryPredicate p = std::equal_to<value_type>()) {
+  void unique(BinaryPredicate p) {
     if (size_ <= 1) return;
 
     iterator i = ++begin();
@@ -352,15 +389,17 @@ class list {
  private:
   void insert_node(node_type* pos, node_type* node) {
     node->prev = pos->prev;
-    node->next = pos->next;
+    node->next = pos;
+    pos->prev = pos->prev->next = node;
 
-    pos->prev->next = pos->next->prev = node;
+    if (pos == front_) front_ = node;
 
     ++size_;
   }
 
   node_type* extract_node(node_type* pos) {
     node_type* result = pos->next;
+    if (pos == front_) front_ = front_->next;
 
     pos->prev->next = pos->next;
     pos->next->prev = pos->prev;

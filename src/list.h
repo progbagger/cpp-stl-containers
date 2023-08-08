@@ -177,9 +177,9 @@ class list {
   const_iterator cend() const noexcept { return const_iterator(back_); }
 
   reverse_iterator rbegin() noexcept { return reverse_iterator(end()); }
-  const_reverse_iterator rbegin() const noexcept { return crend(); }
-  const_iterator crbegin() const noexcept {
-    return const_reverse_iterator(crend());
+  const_reverse_iterator rbegin() const noexcept { return crbegin(); }
+  const_reverse_iterator crbegin() const noexcept {
+    return const_reverse_iterator(cend());
   }
 
   reverse_iterator rend() noexcept { return reverse_iterator(begin()); }
@@ -200,6 +200,7 @@ class list {
       front_ = front_->next;
       delete save;
     }
+    back_->prev = back_->next = back_;
     size_ = size_type();
   }
 
@@ -298,8 +299,10 @@ class list {
     }
   }
 
+  void merge(list& other) { merge(other, std::less<value_type>()); }
+
   template <class Compare>
-  void merge(list& other, Compare comp = std::less<value_type>()) {
+  void merge(list& other, Compare comp) {
     iterator i1 = begin(), i2 = other.begin();
     while (i1 != end() && i2 != other.begin()) {
       if (comp(*i2, *i1)) {
@@ -355,8 +358,10 @@ class list {
       if (p(*i, *(--iterator(i)))) i = erase(i);
   }
 
+  void sort() { sort(std::less<value_type>()); }
+
   template <class Compare>
-  void sort(Compare comp = std::less<value_type>()) {
+  void sort(Compare comp) {
     if (size_ <= 1) return;
 
     iterator i1 = begin();

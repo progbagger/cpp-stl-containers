@@ -30,8 +30,8 @@ class vector {
       : data_(allocate(size)), size_(), capacity_(size) {
     for (size_type i = 0; i < capacity_; ++i) push_back(value);
   }
-  template <class InputIterator>
-  vector(InputIterator first, InputIterator last) : vector() {
+  template <class InputIt>
+  vector(InputIt first, InputIt last) : vector() {
     while (first != last) {
       push_back(*first);
       ++first;
@@ -71,8 +71,8 @@ class vector {
     while (count--) push_back(value);
   }
 
-  template <class InputIterator>
-  void assign(InputIterator first, InputIterator last) {
+  template <class InputIt>
+  void assign(InputIt first, InputIt last) {
     clear();
     while (first != last) {
       push_back(*first);
@@ -197,8 +197,8 @@ class vector {
     return result;
   }
 
-  template <class InputIterator>
-  iterator insert(const_iterator pos, InputIterator first, InputIterator last) {
+  template <class InputIt>
+  iterator insert(const_iterator pos, InputIt first, InputIt last) {
     iterator result = pos;
     while (first != last) {
       result = insert(result, *first);
@@ -295,9 +295,9 @@ class vector {
 
 // deduction guides
 
-template <class InputIterator>
-vector(InputIterator, InputIterator)
-    -> vector<typename std::iterator_traits<InputIterator>::value_type>;
+template <class InputIt>
+vector(InputIt, InputIt)
+    -> vector<typename std::iterator_traits<InputIt>::value_type>;
 
 }  // namespace cont
 

@@ -74,7 +74,7 @@ class list_iterator {
   reference operator*() const noexcept { return *ptr_->data; }
   pointer operator->() const noexcept { return ptr_->data; }
 
-  operator list_const_iterator<value_type>() {
+  operator list_const_iterator<value_type>() const {
     return list_const_iterator<value_type>(ptr_);
   }
 

@@ -14,7 +14,7 @@ class stack {
   using const_reference = typename container_type::const_reference;
   using size_type = typename container_type::size_type;
 
-  explicit stack(const Container& cont = Container()) : cont_(cont) {}
+  explicit stack(const container_type& cont = container_type()) : cont_(cont) {}
   explicit stack(Container&& cont) : cont_(std::move(cont)) {}
 
   template <class InputIt>

@@ -101,10 +101,10 @@ template <class T>
 class list {
  public:
   using value_type = T;
-  using reference = T&;
-  using const_reference = const T&;
-  using pointer = T*;
-  using const_pointer = const T*;
+  using reference = value_type&;
+  using const_reference = const value_type&;
+  using pointer = value_type*;
+  using const_pointer = const value_type*;
   using size_type = std::size_t;
   using difference_type = std::ptrdiff_t;
   using node_type = node<value_type>;
@@ -162,11 +162,11 @@ class list {
     assign(items.begin(), items.end());
   }
 
-  reference front() noexcept { return front_->data; }
-  const_reference front() const noexcept { return front_->data; }
+  reference front() noexcept { return *front_->data; }
+  const_reference front() const noexcept { return *front_->data; }
 
-  reference back() noexcept { return back_->prev->data; }
-  const_reference back() const noexcept { return back_->prev->data; }
+  reference back() noexcept { return *back_->prev->data; }
+  const_reference back() const noexcept { return *back_->prev->data; }
 
   iterator begin() noexcept { return iterator(front_); }
   const_iterator begin() const noexcept { return cbegin(); }
@@ -267,9 +267,10 @@ class list {
 
   template <class... Args>
   reference emplace_back(Args&&... args) {
-    node_type* node = new node_type(std::forward<Args>(args)...);
+    node_type* node =
+        new node_type(new value_type(std::forward<Args>(args)...));
     insert_node(back_, node);
-    return node->data;
+    return *node->data;
   }
 
   void pop_back() { erase(iterator(back_->prev)); }
@@ -279,9 +280,10 @@ class list {
 
   template <class... Args>
   reference emplace_front(Args&&... args) {
-    node_type* node = new node_type(std::forward<Args>(args)...);
-    insert_node(begin(), node);
-    return node->data;
+    node_type* node =
+        new node_type(new value_type(std::forward<Args>(args)...));
+    insert_node(front_, node);
+    return *node->data;
   }
 
   void pop_front() { erase(begin()); }
